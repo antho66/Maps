@@ -1,0 +1,56 @@
+html, body{
+    height: 100%;
+}
+
+
+body{
+    display: flex;
+    
+}
+
+#map{
+    height: auto;
+    width: 70%;
+}
+
+#info{
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-content: center;
+}
+
+#register{
+    display: flex;
+    flex-direction: column;
+}
+
+input{
+    margin: 27px;
+}
+
+.choix input{
+    margin: 10px;
+}
+
+.choix input{
+    margin: 10px;
+}
+
+ #fini {
+    height: 48px;
+    width: 83px;
+}
+
+
+#text{
+    height: auto;
+    width: auto;
+}
+
+.filtre{
+    margin: 0px;
+    height: 80px;
+    width: -1px;
+}
