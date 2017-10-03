@@ -13,12 +13,18 @@ this.$date_fin = $("#date_fin");
 this.$name = $("#title");
 this.$check = $(".son");
 this.$error = $(".errors");
-this.logo = $("#logo");
+this.$logo = $("#logo");
 this.valider = $("#fini");
 this.$inputType = $('.filtre input[type="checkbox"]');
 this.$looking = $('.name');
+this.$admin = $('#administrateur');
+this.$client = $('#client');
+this.$searchname = $("#searchname");
+this.$searchdated = $("#searchdated");
 
+this.currentSelected = null;
 
+//tableau
 this.error = [];
 this.markers = [];
 
@@ -40,6 +46,7 @@ iniPickers(){
     monthNamesShort : ["Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"],
     firstDay: 1,
     minDate: new Date(),
+    dateFormat: "dd/mm/yy"
     };
 
     this.$date_debut.datepicker( options );
@@ -59,8 +66,9 @@ initMap(){
     var position = e.latLng;
     that.$lat.val(position.lat);
     that.$long.val(position.lng);
+    
   });
-
+      
   this.main();
 }
 
@@ -79,28 +87,30 @@ centerOnGeolocation(){
          that.map.setCenter(pos);
      });
   }
-
-
-addMarker(position , title , date_debut,date_fin, types){
-
-    
-    
-
-    
+addMarker(position , title , date_debut,date_fin, types, logo, subscribe=false){
+    var image = {
+        url: logo,
+        scaledSize: new google.maps.Size(50, 50)
+    };
+    var that = this;
     var marker = new google.maps.Marker({
         position: position,
-        map: this.map,
+        map: that.map,
         title:title,
-        date_debut :this.date_debut,
-        date_fin : this.date_fin,
-        draggable:true,        
+        date_debut :date_debut,
+        date_fin : date_fin,
+        draggable:true,  
+        icon:image,
+        types: types,
+        subscribe: subscribe
       });
-      marker.types = types;
+      
       this.markers.push(marker);
      
       return marker;
 
 }
+
 
 
 addInfos(content , marker) {
@@ -111,12 +121,14 @@ addInfos(content , marker) {
     var that = this;
  
     marker.addListener("click", function(){
+        that.currentSelected = this;
+        
      infowindow.open( that.map, marker);
   });
  
- }
+}
 
- checkErrors(){
+checkErrors(){
 
     this.error = [];
 
@@ -158,10 +170,10 @@ addInfos(content , marker) {
 
             return(Object.keys(this.error).length > 0) ; 
       
- }
+}
 
 
- posteErrors(){
+posteErrors(){
      var div = "";
        for(var key in this.error){
             div += "<p>"+ this.error[key] + "</p>";
@@ -204,11 +216,90 @@ readMarker(){
                 var marker = new Marker ( position , title , date_debut,date_fin);
                 this.pushMarker(marker);
              }
-           }
-  
+}
+
+setSearch(visTab, invisTab) {
+    for(var marker of visTab) {
+        marker.setVisible(true);
+    }
+    for(var marker of invisTab) {
+        marker.setVisible(false);
+    }
+}
+
+searchFestivalOrDated() {
+            var visible = [];
+            var invisible = [];
+
+            var even = new RegExp(this.$searchname.val());
+
+            var dated = new RegExp(this.$searchdated.val());
+
+            for(var marker of this.markers){
+
+                if ( even.test(marker.title)) {
+                    visible.push(marker);
+                    // marker.setVisible(true);
+                } else {
+                    invisible.push(marker);
+                }
+
+                if(dated.test(marker.date_debut)){
+                    visible.push(marker);
+                } else {
+                    invisible.push(marker);
+                }
+
+
+                
+                if(even.test(marker.title) && dated.test(marker.date_debut)){
+                    visible.push(marker);
+                } else {
+                    invisible.push(marker);
+                }
+
+                }
+
+        
+
+            this.setSearch(visible, invisible);
+}
     
-  
+loadMarker() {
+    var that = this;
+    $.ajax({
+        url: "http://localhost/TP_api/API/festival",
+        method: "get",
+        dataType: "json",
+        success: function( data ){ console.log(data);
+            for(var marker of data) {
+                var pos = {
+                    lat: parseFloat(marker.latitude),
+                    lng: parseFloat(marker.longitude)
+                };
+                var mapmarker = that.addMarker(pos , marker.title , marker.date_debut,marker.date_fin, marker.type_musique, marker.logo, "false"); 
+
+                var content = "<button id='part'> Participer </button>";
+                content += "<br />";
+                content += "<div>"+ marker.title + "</div>";
+                content += "<br />";
+                content += "<div>"+marker.date_debut + "</div>";
+                content += "<div>"+ marker.date_fin + "</div>";
+                content+= "<p> Type de musique :</p>";
+                content+= "<p> "+ marker.type_musique +" :</p>";
+
+            that.addInfos( content, mapmarker);
+
+            }
+   
+        },
+        error: function( data ){
+            console.log( data );
+        }
+    });
+}
   
 
 }
 
+// function: loadMarker (requete ajax) vers http://localhost/TP_api/API/festival
